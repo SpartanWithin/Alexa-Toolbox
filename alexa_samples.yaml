@@ -94,7 +94,7 @@ automation:
             # volume_level: 0.75
             # type: announce
             # method: all
-            voice_message: "La luce dello Studio è accesa. Vuoi spegnerla?"
+            voice_message: "La luce dello Studio è rimasta accesa. Vuoi spegnerla?"
             delay: 60
 
   # actionable notification for lights left on test ResponseYes
