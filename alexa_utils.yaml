@@ -13,7 +13,7 @@
     # https://github.com/custom-components/alexa_media_player
 
   # Alexa Actions: Actionable notifications from home assistant to Alexa
-    # https://github.com/keatontaylor/alexa-actions/wiki/FirstAction
+    # https://github.com/keatontaylor/alexa-actions
   # Notifiche azionabili di Alexa...una figata pazzesca!!!
     # https://spectrum.chat/indomus/general/notifiche-azionabili-di-alexa-una-figata-pazzesca~07b80237-2379-4431-ad06-a0b4b0df6649
 
@@ -29,13 +29,6 @@ sensor:
 
       # last Echo speaking
       last_alexa:
-        # entity_id:
-        #   - media_player.echo_dot_loveroom
-        #   - media_player.fire_tv_loveroom
-        #   - media_player.echo_dot_underground
-        #   - media_player.echo_show_livingroom
-        #   - media_player.echo_show_garagegym
-        #   - media_player.echo_flex_studio
         value_template: >
           {{ states.media_player | selectattr('attributes.last_called', 'eq', True) | map(attribute='entity_id') | first }}
 
@@ -86,8 +79,9 @@ input_boolean:
 group:
 
 
-  # available Alexa devices (Amazon Echoes and others)
+  # example of available Alexa devices (Amazon Echoes and others)
     # equals to "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+
   all_alexa_devices:
     # examples
     - media_player.echo
@@ -100,7 +94,9 @@ group:
     - media_player.echo_flex
     - media_player.fire_tv
 
-  # favorite
+
+  # example of favorite Alexa devices
+
   fav_alexa_devices:
     # examples
     - media_player.echo_bedroom
@@ -115,7 +111,8 @@ group:
     - media_player.fire_tv_livingroom
 
 
-  # automations with vocal notification
+  # example of automations with vocal notification to disable for testing
+
   vocal_notification_automations:
     # change with your own automation that call "alexa_announce" or "alexa_actionable_notification" scripts
     - automation.alexa_tts
@@ -134,9 +131,65 @@ group:
 script:
 
 
-  # Alexa Actionable Notifications
+  # Alexa Announce
 
-  # Alexa Actionable Notifications - Holder: base script to activate AAN
+  # general Alexa announce script with many settings to let talk Alexa on a specific Echo(es) or all of them
+
+    # SAMPLES
+    #
+    #
+    # CASE 1 - default: all Echoes defined in "group.all_alexa_devices", 50% volume, "announce" type, "all" method, 5" delay; omit all variables except for the "message" value
+    #
+    # - service: script.turn_on
+    #   entity_id: script.alexa_announce
+    #   data_template:
+    #     variables:
+    #       message: "Questo dispositivo ha il volume impostato al {{ (state_attr('media_player.echo_flex_studio', 'volume_level')*100) | int }}%"
+    #
+    #
+    # CASE 2 - custom: one or more choosen Echo(es), 75% volume, "tts" type, "spoken" method only, 10" delay
+    #
+    # - service: script.turn_on
+    #   entity_id: script.alexa_announce
+    #   data_template:
+    #     variables:
+    #       alexa_devices: "media_player.echo_flex_studio"
+    #       volume_level: 0.75
+    #       type: tts
+    #       method: spoken
+    #       message: "Il volume di questo dispositivo è {{ (state_attr('{{ alexa_devices }}', 'volume_level')*10) | int }}"
+    #       delay: 10
+
+  alexa_announce:
+    alias: "[Alexa] impostazione volume e annuncio"
+    description: "annuncio a tutti i dispositivi con Alexa disponibili (default) oppure uno o più di quelli specificati"
+    mode: queued
+    variables:
+      # equals to "alexa_devices: group.all_alexa_devices"
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+      volume_level: 0.5
+      type: announce
+      method: all
+      delay: 5
+    sequence:
+      - service: media_player.volume_set
+        data_template:
+          entity_id: "{{ alexa_devices }}"
+          volume_level: "{{ volume_level }}"
+      - service: notify.alexa_media
+        data_template:
+          target: "{{ alexa_devices }}"
+          data:
+            type: "{{ type }}"
+            method: "{{ method }}"
+          message: "{{ message }}"
+      - delay: "{{ delay }}"
+
+
+  # Alexa Actionable Notifications fork from Keaton Taylor
+
+  # Alexa Actionable Notifications - Holder: original script to activate AAN
+
   activate_alexa_actionable_notification:
     alias: "[Alexa] Actionable Notifications"
     description: "attiva una notifica azionabile di Alexa su uno o più dispositivi Echo specificati"
@@ -147,7 +200,7 @@ script:
       event_id:
         description: 'Correlation ID for event responses'
         example: 'ask_for_temperature'
-      alexa_devices:
+      alexa_device:
         description: 'Alexa device you want to trigger'
         example: 'media_player.bedroom_echo'
     variables:
@@ -160,17 +213,16 @@ script:
           value: '{"text": "{{ text }}", "event": "{{ event_id }}"}'
       - service: media_player.play_media
         data:
-          entity_id: "{{ alexa_devices }}"
+          entity_id: "{{ alexa_device }}"
           media_content_type: skill
           media_content_id: amzn1.ask.skill.e88fbdfd-46e5-431e-9118-3ce3b62d4bca
 
 
-  # Alexa Actionable Notifications Holder - place-holder of original script
+  # Alexa Actionable Notifications - Holder: place-holder of original script
+
   alexa_actionable_notification_holder:
     alias: "[Alexa] Actionable Notifications Holder"
     description: "attiva una notifica azionabile di Alexa su uno o più dispositivi Echo specificati"
-    variables:
-      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
     fields:
       text:
         description: "The text you would like alexa to speak."
@@ -182,18 +234,23 @@ script:
         description: "Alexa device(s) you want to trigger"
         example: >
           "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+    variables:
+      # equals to "alexa_devices: group.all_alexa_devices"
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
     sequence:
       - service: script.activate_alexa_actionable_notification
         data_template:
           text: "{{ text }}"
           event_id: "{{ event_id }}"
-          alexa_devices: "{{ alexa_devices }}"
+          alexa_device: "{{ alexa_devices }}"
 
 
   # Alexa Actionable Notifications - Activation: Alexa ask
+
   alexa_actionable_notification_activation:
     alias: "[Alexa] Actionable Notifications - Activation"
     description: "Alexa Actionable Notifications - Activation"
+    mode: parallel
     fields:
       event_id:
         description: activation event ID
@@ -271,9 +328,11 @@ script:
 
 
   # Alexa Actionable Notifications - ResponseYes: actions to do to affermative answer
+
   alexa_actionable_notification_responseyes:
     alias: "[Alexa] Actionable Notifications - ResponseYes"
     description: "Alexa Actionable Notifications - ResponseYes"
+    mode: parallel
     fields:
       entity_id:
         description: entity ID of a switch used to control the cycle completes
@@ -344,89 +403,6 @@ script:
       - service: input_boolean.turn_off
         data:
           entity_id: "{{ entity_id }}"
-
-
-  # Alexa announce
-
-  # general Alexa announce to a specific Echo(es) or all of them
-
-    # SAMPLES
-    #
-    #
-    # CASE 1 - default: all Echoes defined in "group.all_alexa_devices", 50% volume, "announce" type, "all" method, 5" delay; omit all variables except for the "message" value
-    #
-    # - service: script.turn_on
-    #   entity_id: script.alexa_announce
-    #   data_template:
-    #     variables:
-    #       message: "Questo dispositivo ha il volume impostato al {{ (state_attr('media_player.echo_flex_studio', 'volume_level')*100) | int }}%"
-    #
-    #
-    # CASE 2 - custom: one or more choosen Echo(es), 70% volume, "tts" type, "spoken" method only, 10" delay
-    #
-    # - service: script.turn_on
-    #   entity_id: script.alexa_announce
-    #   data_template:
-    #     variables:
-    #       alexa_devices: "media_player.echo_show_living_room"
-    #       volume_level: 0.75
-    #       type: tts
-    #       method: spoken
-    #       message: "Il volume di questo dispositivo è {{ (state_attr('{{ alexa_devices }}', 'volume_level')*10) | int }}"
-    #       delay: 10
-
-  # script to let talk Alexa on all (or specified) Alexa devices with many settings
-  alexa_announce:
-    alias: "[Alexa] impostazione volume e annuncio"
-    description: "annuncio a tutti i dispositivi con Alexa disponibili (default) oppure uno o più di quelli specificati"
-    mode: queued
-    variables:
-      # equals to "alexa_devices: group.all_alexa_devices"
-      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
-      volume_level: 0.5
-      type: announce
-      method: all
-      delay: 5
-    sequence:
-      - service: media_player.volume_set
-        data_template:
-          entity_id: "{{ alexa_devices }}"
-          volume_level: "{{ volume_level }}"
-      - service: notify.alexa_media
-        data_template:
-          target: "{{ alexa_devices }}"
-          data:
-            type: "{{ type }}"
-            method: "{{ method }}"
-          message: "{{ message }}"
-      - delay: "{{ delay }}"
-
-  # script to verify announce on Alexa device(s) get done
-  alexa_announce_done:
-    alias: "[Alexa] announce done"
-    sequence:
-      - alias: repeat the sequence until the conditions are true
-        repeat:
-          sequence:
-            - service: script.turn_on
-              entity_id: script.alexa_announce
-              data_template:
-                variables:
-                  alexa_devices: "{{ alexa_devices }}"
-                  volume_level: "{{ volume_level }}"
-                  type: "{{ type }}"
-                  method: "{{ method }}"
-                  message: "{{ message }}"
-                  delay: "{{ delay }}"
-            - service: input_boolean.turn_off
-              entity_id: input_boolean.alexa_announce_done
-          until:
-            - condition: state
-              entity_id: "input_boolean.alexa_announce_done"
-              state: "off"
-      - delay: 5
-      - service: input_boolean.turn_on
-        entity_id: input_boolean.alexa_announce_done
 
 
 
