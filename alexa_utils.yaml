@@ -4,15 +4,18 @@
 
 
 
-# set Amazon Echoes volume before annunce speaking
-# https://indomus.it/formazione/gli-script-di-home-assistant-cosa-sono-e-come-si-usano/
-# https://indomus.it/guide/integrare-amazon-alexa-come-media-player-su-home-assistant/
-# https://indomus.it/guide/far-parlare-amazon-alexa-come-sistema-di-notifica-domotica-su-home-assistant/
+# CREDITS:
 
-# Alexa Actionable Notifications
-  #https://github.com/keatontaylor/alexa-actions/wiki/FirstAction
-# Notifiche azionabili di Alexa...una figata pazzesca!!!
-  # https://spectrum.chat/indomus/general/notifiche-azionabili-di-alexa-una-figata-pazzesca~07b80237-2379-4431-ad06-a0b4b0df6649
+  # “Far parlare” Amazon Alexa come sistema di notifica domotica su Home Assistant
+    # https://indomus.it/guide/far-parlare-amazon-alexa-come-sistema-di-notifica-domotica-su-home-assistant/
+
+  # Alexa Media player
+    # https://github.com/custom-components/alexa_media_player
+
+  # Alexa Actions: Actionable notifications from home assistant to Alexa
+    # https://github.com/keatontaylor/alexa-actions/wiki/FirstAction
+  # Notifiche azionabili di Alexa...una figata pazzesca!!!
+    # https://spectrum.chat/indomus/general/notifiche-azionabili-di-alexa-una-figata-pazzesca~07b80237-2379-4431-ad06-a0b4b0df6649
 
 
 
