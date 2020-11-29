@@ -87,11 +87,11 @@ automation:
             event_id: actionable_notifications_lights_left_on
             # entity_id: input_boolean.alexa_actionable_notification_test
             notify_system: notify.tiger
-            title: "_TEST_"
+            title: "_LUCI_"
             text_message: >
               Hai dimenticato la luce dello studio accesa.
             alexa_devices: media_player.echo_flex_studio
-            # volume_level: 0.5
+            # volume_level: 0.75
             # type: announce
             # method: all
             voice_message: "La luce dello Studio è accesa. Vuoi spegnerla?"
@@ -115,10 +115,10 @@ automation:
           variables:
             # entity_id: input_boolean.alexa_actionable_notification_test
             notify_system: notify.tiger
-            title: "_TEST_"
+            title: "_LUCI_"
             text_message: "Hai dimenticato una luce accesa e l'ho spenta."
             alexa_devices: media_player.echo_flex_studio
-            volume_level: 0.5
+            volume_level: 0.75
             type: tts
             # method: all
             voice_message: "Ho spento la luce che avevi dimenticato accesa."
