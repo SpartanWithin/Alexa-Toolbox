@@ -1,0 +1,125 @@
+################################
+#        ALEXA SAMPLES         #
+################################
+
+
+
+# INPUTS BOOLEAN
+
+input_boolean:
+
+
+  # test switch to get Alexa Actionable Notification complete the cycle
+  alexa_actionable_notification_test:
+    name: pulsante di test di controllo del ciclo di Alexa Actionable Notifications
+    initial: off
+    icon: mdi:amazon-alexa
+
+  # switch to test Alexa Actionable Notification with "ResponseNumeric"
+  alexa_actionable_notifications_number_test:
+    name: pulsante di test per Alexa Actionable Notifications
+    initial: off
+    icon: mdi:amazon-alexa
+
+
+
+# AUTOMATIONS
+
+automation:
+
+
+  # Alexa Actionable Notifications
+
+  # Alexa Actionable Notifications number test - activation
+  - id: Alexa-Actionable_Notifications-number_test-activation
+    alias: "[Alexa] Actionable Notifications number test - activation"
+    description: "Alexa Actionable Notifications number test: viene chiesto di scegliere un numero di 4 cifre"
+    initial_state: true
+    mode: single
+    trigger:
+    - platform: state
+      entity_id: input_boolean.alexa_actionable_notifications_number_test
+      to: "on"
+    action:
+    - service: script.activate_alexa_actionable_notification
+      data:
+        text: "Prova a dire un numero"
+        event_id: alexa_actionable_notifications_activation_number_test
+        alexa_devices: media_player.echo_flex_studio
+
+  # Alexa Actionable Notifications number test - response
+  - id: Alexa-Actionable_Notifications-number_test-response
+    alias: "[Alexa] Actionable Notifications number test - response"
+    initial_state: true
+    description: "Alexa Actionable Notifications number test: viene inviato su Telegram un messaggio con il numero di 4 cifre scelto"
+    trigger:
+    - platform: event
+      event_type: alexa_actionable_notification
+      event_data:
+        event_id: alexa_actionable_notifications_activation_number_test
+        event_response_type: ResponseNumeric
+    action:
+    - service: notify.tiger
+      data:
+        message: "Il tuo numero è {{ trigger.event.data.event_response }}."
+    - service: input_boolean.turn_off
+      entity_id: input_boolean.alexa_actionable_notifications_number_test
+
+
+  # Alexa Actionable Notifications universal scripts test
+
+  # actionable notification for lights left on test - activation
+  - id: lights_on_test-activation
+    alias: "[Alexa] test luci accese - attivazione"
+    description: "test Alexa Actionable Notifications luce accesa - attivazione"
+    trigger:
+      - platform: state
+        entity_id: light.desk
+        to: "on"
+        for: 0:00:05
+    action:
+      - service: script.turn_on
+        entity_id: script.alexa_actionable_notification_activation
+        data_template:
+          variables:
+            event_id: actionable_notifications_lights_left_on
+            # entity_id: input_boolean.alexa_actionable_notification_test
+            notify_system: notify.tiger
+            title: "_TEST_"
+            text_message: >
+              Hai dimenticato la luce dello studio accesa.
+            alexa_devices: media_player.echo_flex_studio
+            # volume_level: 0.5
+            # type: announce
+            # method: all
+            voice_message: "La luce dello Studio è accesa. Vuoi spegnerla?"
+            delay: 60
+
+  # actionable notification for lights left on test ResponseYes
+  - id: lights_on_test-response
+    alias: "[Alexa] test luci accese - risposta"
+    description: "test Alexa Actionable Notifications luce accesa - risposta"
+    initial_state: true
+    trigger:
+      - platform: event
+        event_type: alexa_actionable_notification
+        event_data:
+          event_id: actionable_notifications_lights_left_on
+          event_response_type: ResponseYes
+    action:
+      - service: script.turn_on
+        entity_id: script.alexa_actionable_notification_responseyes
+        data_template:
+          variables:
+            # entity_id: input_boolean.alexa_actionable_notification_test
+            notify_system: notify.tiger
+            title: "_TEST_"
+            text_message: "Hai dimenticato una luce accesa e l'ho spenta."
+            alexa_devices: media_player.echo_flex_studio
+            volume_level: 0.5
+            type: tts
+            # method: all
+            voice_message: "Ho spento la luce che avevi dimenticato accesa."
+            # delay: 5
+      - service: light.turn_off
+        entity_id: light.desk
