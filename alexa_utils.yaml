@@ -168,7 +168,7 @@ script:
     variables:
       # equals to "alexa_devices: group.all_alexa_devices"
       alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
-      volume_level: 0.5
+      volume_level: 0.75
       type: announce
       method: all
       delay: 5
@@ -313,19 +313,6 @@ script:
                 alexa_devices: "{{ alexa_devices }}"
             # give it some time to complete
             - delay: "{{ delay }}"
-            # until... did it work
-            # - condition: state
-            #   # stupid condition that doesn't accept variables :(
-            #   # entity_id: "{{ entity_id }}"
-            #   entity_id: input_boolean.alexa_actionable_notification_test
-            #   state: "on"
-            # - condition: template
-            #   # correct syntax but don't working
-            #   # "{{ is_state('{{ entity_id }}', 'on') }}"
-            #   # "{{ "is_state('{{ entity_id }}', 'on')" }}"
-            #   # "{% set entity_id = states('{{ entity_id }}') %}{{ true if entity_id == 'on' else false }}"
-            #   # > {{ is_state("'{{ entity_id }}'", 'on') }}
-            #   value_template: "{{ is_state('input_boolean.alexa_actionable_notification_test', 'on') }}"
 
 
   # Alexa Actionable Notifications - ResponseYes: actions to do to affermative answer
@@ -373,7 +360,7 @@ script:
       title: "_ERROR_"
       text_message: "Hai dimenticato di specificare un messaggio."
       alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
-      volume_level: 0.5
+      volume_level: 0.75
       type: announce
       method: all
       voice_message: "{{ text_message }}"
@@ -387,7 +374,7 @@ script:
       # force update the last Alexa attribute used by the sensor
       - service: alexa_media.update_last_called
       # you may need to increase this value if you don't get the response on the Echo you asked the question
-      - delay: 00:00:01
+      - delay: 1
       # Alexa announce
       - service: script.turn_on
         entity_id: script.alexa_announce
@@ -404,6 +391,154 @@ script:
       - service: input_boolean.turn_off
         data:
           entity_id: "{{ entity_id }}"
+
+
+  # Alexa Actionable Notifications - ResponseYes: actions to do to affermative answer
+
+  alexa_actionable_notification_responseno:
+    alias: "[Alexa] Actionable Notifications - ResponseNo"
+    description: "Alexa Actionable Notifications - ResponseNo"
+    mode: parallel
+    fields:
+      entity_id:
+        description: entity ID of a switch used to control the cycle completes
+        example: input_boolean.alexa_actionable_notification_holder    # default
+      notify_system:
+        description: text notification system to use
+        example: notify.USER
+      title:
+        description: title of the message
+        example: "_ERROR_"
+      text_message:
+        description: text of the message
+        example: "Hai dimenticato di specificare un messaggio."
+      alexa_devices:
+        description: Alexa device(s) to use
+        example: >
+          "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+      volume_level:
+        description: volume level to set Alexa device(s)
+        example: 0.5                                                       # default
+      type:
+        description: type of message for Alexa device(s)
+        example: tts                                                       # default
+      method:
+        description: method of message for Alexa device(s)
+        example: all                                                       # default
+      voice_message:
+        description: text of the message that Alexa pronounce
+        example: "Hai dimenticato di specificare un messaggio."
+      delay:
+        description: time to wait until a new Alexa announce
+        example: 5                                                         # default
+    variables:
+      # default configuration
+      entity_id: input_boolean.alexa_actionable_notification_holder
+      notify_system: notify.USER
+      title: "_ERROR_"
+      text_message: "Hai dimenticato di specificare un messaggio."
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+      volume_level: 0.75
+      type: announce
+      method: all
+      voice_message: "{{ text_message }}"
+      delay: 5
+    sequence:
+      # # text message advice - replace with your own Telegram or other platform notification system
+      # - service: "{{ notify_system }}"
+      #   data_template:
+      #     title: "{{ title }}"
+      #     message: "{{ text_message }}"
+      # force update the last Alexa attribute used by the sensor
+      - service: alexa_media.update_last_called
+      # you may need to increase this value if you don't get the response on the Echo you asked the question
+      - delay: 1
+      # Alexa announce
+      - service: script.turn_on
+        entity_id: script.alexa_announce
+        data_template:
+          variables:
+            # replace with your favorite Alexa device(s) and settings
+            alexa_devices: "{{ alexa_devices }}"
+            volume_level: "{{ volume_level }}"
+            type: "{{ type }}"
+            method: "{{ method }}"
+            message: "{{ voice_message }}"
+            delay: "{{ delay }}"
+
+
+  # Alexa Actionable Notifications - ResponseYes: actions to do to affermative answer
+
+  alexa_actionable_notification_responsenone:
+    alias: "[Alexa] Actionable Notifications - ResponseNone"
+    description: "Alexa Actionable Notifications - ResponseNone"
+    mode: parallel
+    fields:
+      entity_id:
+        description: entity ID of a switch used to control the cycle completes
+        example: input_boolean.alexa_actionable_notification_holder    # default
+      notify_system:
+        description: text notification system to use
+        example: notify.USER
+      title:
+        description: title of the message
+        example: "_ERROR_"
+      text_message:
+        description: text of the message
+        example: "Hai dimenticato di specificare un messaggio."
+      alexa_devices:
+        description: Alexa device(s) to use
+        example: >
+          "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+      volume_level:
+        description: volume level to set Alexa device(s)
+        example: 0.5                                                       # default
+      type:
+        description: type of message for Alexa device(s)
+        example: tts                                                       # default
+      method:
+        description: method of message for Alexa device(s)
+        example: all                                                       # default
+      voice_message:
+        description: text of the message that Alexa pronounce
+        example: "Hai dimenticato di specificare un messaggio."
+      delay:
+        description: time to wait until a new Alexa announce
+        example: 5                                                         # default
+    variables:
+      # default configuration
+      entity_id: input_boolean.alexa_actionable_notification_holder
+      notify_system: notify.USER
+      title: "_ERROR_"
+      text_message: "Hai dimenticato di specificare un messaggio."
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+      volume_level: 0.75
+      type: announce
+      method: all
+      voice_message: "{{ text_message }}"
+      delay: 5
+    sequence:
+      # text message advice - replace with your own Telegram or other platform notification system
+      - service: "{{ notify_system }}"
+        data_template:
+          title: "{{ title }}"
+          message: "{{ text_message }}"
+      # force update the last Alexa attribute used by the sensor
+      - service: alexa_media.update_last_called
+      # you may need to increase this value if you don't get the response on the Echo you asked the question
+      - delay: 1
+      # Alexa announce
+      - service: script.turn_on
+        entity_id: script.alexa_announce
+        data_template:
+          variables:
+            # replace with your favorite Alexa device(s) and settings
+            alexa_devices: "{{ alexa_devices }}"
+            volume_level: "{{ volume_level }}"
+            type: "{{ type }}"
+            method: "{{ method }}"
+            message: "{{ voice_message }}"
+            delay: "{{ delay }}"
 
 
 
