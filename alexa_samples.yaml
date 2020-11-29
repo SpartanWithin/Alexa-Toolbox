@@ -30,6 +30,8 @@ automation:
 
   # Alexa Actionable Notifications
 
+  # Alexa Actionable Notifications Number test from Larry-79
+
   # Alexa Actionable Notifications number test - activation
   - id: Alexa-Actionable_Notifications-number_test-activation
     alias: "[Alexa] Actionable Notifications number test - activation"
@@ -41,7 +43,7 @@ automation:
       entity_id: input_boolean.alexa_actionable_notifications_number_test
       to: "on"
     action:
-    - service: script.activate_alexa_actionable_notification
+    - service: script.alexa_actionable_notification_holder
       data:
         text: "Prova a dire un numero"
         event_id: alexa_actionable_notifications_activation_number_test
@@ -76,7 +78,7 @@ automation:
       - platform: state
         entity_id: light.desk
         to: "on"
-        for: 0:00:05
+        for: 1:00:00
     action:
       - service: script.turn_on
         entity_id: script.alexa_actionable_notification_activation
