@@ -1,0 +1,460 @@
+################################
+#        ALEXA TOOLBOX         #
+################################
+
+
+
+# set Amazon Echoes volume before annunce speaking
+# https://indomus.it/formazione/gli-script-di-home-assistant-cosa-sono-e-come-si-usano/
+# https://indomus.it/guide/integrare-amazon-alexa-come-media-player-su-home-assistant/
+# https://indomus.it/guide/far-parlare-amazon-alexa-come-sistema-di-notifica-domotica-su-home-assistant/
+
+# Alexa Actionable Notifications
+  #https://github.com/keatontaylor/alexa-actions/wiki/FirstAction
+# Notifiche azionabili di Alexa...una figata pazzesca!!!
+  # https://spectrum.chat/indomus/general/notifiche-azionabili-di-alexa-una-figata-pazzesca~07b80237-2379-4431-ad06-a0b4b0df6649
+
+
+
+# SENSORS
+
+sensor:
+
+
+  - platform: template
+    sensors:
+
+      # last Echo speaking
+      last_alexa:
+        # entity_id:
+        #   - media_player.echo_dot_loveroom
+        #   - media_player.fire_tv_loveroom
+        #   - media_player.echo_dot_underground
+        #   - media_player.echo_show_livingroom
+        #   - media_player.echo_show_garagegym
+        #   - media_player.echo_flex_studio
+        value_template: >
+          {{ states.media_player | selectattr('attributes.last_called', 'eq', True) | map(attribute='entity_id') | first }}
+
+
+
+# INPUTS TEXT
+
+input_text:
+
+
+  # Alexa Actionable Notifications
+
+  alexa_actionable_notification:
+    name: Alexa Actionable Notification Holder
+    max: 255
+    initial: '{"text": "This is a test of the alexa actions custom skill. Did it work?", "event": "actionable.skill.test"}'
+
+
+
+# INPUTS BOOLEAN
+
+input_boolean:
+
+
+  # mark an Alexa announce as finished in script.alexa_announce_done
+  alexa_announce_done:
+    name: annuncio di Alexa completato
+    initial: off
+    icon: mdi:amazon-alexa
+
+  # switch to enable/disable Alexa voice notifications automation
+    # useful in case of test with many automation reloads or Home Assistant restarts
+  voice_notifications_switch:
+    name: pulsante per abilitare/disabilitare le notifiche vocali di Alexa
+    initial: on         # default: automations with voice notifications enabled
+    icon: mdi:amazon-alexa
+
+  # switch to get Alexa Actionable Notification complete the cycle
+  alexa_actionable_notification_holder:
+    name: pulsante di controllo del ciclo di Alexa Actionable Notifications
+    initial: off
+    icon: mdi:amazon-alexa
+
+
+
+# GROUPS
+
+group:
+
+
+  # available Alexa devices (Amazon Echoes and others)
+    # equals to "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+  all_alexa_devices:
+    # examples
+    - media_player.echo
+    - media_player.echo_dot
+    - media_player.echo_plus
+    - media_player.echo_studio
+    - media_player.echo_show5
+    - media_player.echo_show8
+    - media_player.echo_show10
+    - media_player.echo_flex
+    - media_player.fire_tv
+
+  # favorite
+  fav_alexa_devices:
+    # examples
+    - media_player.echo_bedroom
+    - media_player.echo_dot_tavern
+    - media_player.echo_plus_boyroom
+    - media_player.echo_plus_girlroom
+    - media_player.echo_studio_livingroom
+    - media_player.echo_show5_diningroom
+    - media_player.echo_show8_gym
+    - media_player.echo_show10_kithen
+    - media_player.echo_flex_studio
+    - media_player.fire_tv_livingroom
+
+
+  # automations with vocal notification
+  vocal_notification_automations:
+    # change with your own automation that call "alexa_announce" or "alexa_actionable_notification" scripts
+    - automation.alexa_tts
+    - automation.timer_announcement
+    - automation.alexa_test_luci_love_room_accese_da_un_ora_attivazione
+    - automation.device_device_con_batteria_completamente_carica
+    - automation.device_device_con_batteria_scarica
+    - automation.device_batteria_ipad_scarica
+    - automation.lights_luci_accese_da_almeno_60_minuti
+    - automation.tracking_rientro_a_casa
+
+
+
+# SCRIPTS
+
+script:
+
+
+  # Alexa Actionable Notifications
+
+  # Alexa Actionable Notifications - Holder: base script to activate AAN
+  activate_alexa_actionable_notification:
+    alias: "[Alexa] Actionable Notifications"
+    description: "attiva una notifica azionabile di Alexa su uno o più dispositivi Echo specificati"
+    fields:
+      text:
+        description: 'The text you would like alexa to speak.'
+        example: 'What would you like the thermostat set to?'
+      event_id:
+        description: 'Correlation ID for event responses'
+        example: 'ask_for_temperature'
+      alexa_devices:
+        description: 'Alexa device you want to trigger'
+        example: 'media_player.bedroom_echo'
+    variables:
+      # equals to "alexa_devices: group.all_alexa_devices"
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+    sequence:
+      - service: input_text.set_value
+        data:
+          entity_id: input_text.alexa_actionable_notification
+          value: '{"text": "{{ text }}", "event": "{{ event_id }}"}'
+      - service: media_player.play_media
+        data:
+          entity_id: "{{ alexa_devices }}"
+          media_content_type: skill
+          media_content_id: amzn1.ask.skill.e88fbdfd-46e5-431e-9118-3ce3b62d4bca
+
+
+  # Alexa Actionable Notifications Holder - place-holder of original script
+  alexa_actionable_notification_holder:
+    alias: "[Alexa] Actionable Notifications Holder"
+    description: "attiva una notifica azionabile di Alexa su uno o più dispositivi Echo specificati"
+    variables:
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+    fields:
+      text:
+        description: "The text you would like alexa to speak."
+        example: "What would you like the thermostat set to?"
+      event_id:
+        description: "Correlation ID for event responses"
+        example: actionable_notifications_EVENT_NAME
+      alexa_devices:
+        description: "Alexa device(s) you want to trigger"
+        example: >
+          "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+    sequence:
+      - service: script.activate_alexa_actionable_notification
+        data_template:
+          text: "{{ text }}"
+          event_id: "{{ event_id }}"
+          alexa_devices: "{{ alexa_devices }}"
+
+
+  # Alexa Actionable Notifications - Activation: Alexa ask
+  alexa_actionable_notification_activation:
+    alias: "[Alexa] Actionable Notifications - Activation"
+    description: "Alexa Actionable Notifications - Activation"
+    fields:
+      event_id:
+        description: activation event ID
+        example: alexa_actionable_notification_activation                  # default
+      entity_id:
+        description: entity ID of a switch used to control the cycle completes
+        example: input_boolean.alexa_actionable_notification_holder    # default
+      notify_system:
+        description: text notification system to use
+        example: notify.USER
+      title:
+        description: title of the message
+        example: "_ERROR_"
+      text_message:
+        description: text of the message
+        example: "Hai dimenticato di specificare un messaggio."
+      alexa_devices:
+        description: Alexa device(s) to use
+        example: >
+          "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+      voice_message:
+        description: text of the message that Alexa pronounce
+        example: "Hai dimenticato di specificare un messaggio."
+      delay:
+        description: time to complete a cycle
+        example: 60                                                        # default
+    variables:
+      # default configuration
+      event_id: alexa_actionable_notification_activation
+      entity_id: input_boolean.alexa_actionable_notification_holder
+      notify_system: notify.USER
+      title: "_ERROR_"
+      text_message: "Hai dimenticato di specificare un messaggio."
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+      voice_message: "{{ text_message }}"
+      delay: 60
+    sequence:
+      # setting a boolean to cause the loop to repeat until it is completed
+      - service: input_boolean.turn_on
+        data:
+          entity_id: "{{ entity_id }}"
+      # text message advice - replace with your own Telegram or other platform notification system
+      - service: "{{ notify_system }}"
+        data_template:
+          title: "{{ title }}"
+          message: "{{ text_message }}"
+      # run repeatedly a command that for some reason doesn't always work
+      - alias: repeat the sequence until the conditions are true
+        repeat:
+          # while: "{{ entity_id }}"      # not working
+          while: "{{ is_state('input_boolean.alexa_actionable_notification_holder', 'on') }}"
+          sequence:
+            # Alexa Actionable Notifications Holder
+            - service: script.activate_alexa_actionable_notification
+              data_template:
+                text: "{{ voice_message }}"
+                event_id: "{{ event_id }}"
+                # replace with your favorite Alexa device(s)
+                alexa_devices: "{{ alexa_devices }}"
+            # give it some time to complete
+            - delay: "{{ delay }}"
+            # until... did it work
+            # - condition: state
+            #   # stupid condition that doesn't accept variables :(
+            #   # entity_id: "{{ entity_id }}"
+            #   entity_id: input_boolean.alexa_actionable_notification_test
+            #   state: "on"
+            # - condition: template
+            #   # correct syntax but don't working
+            #   # "{{ is_state('{{ entity_id }}', 'on') }}"
+            #   # "{{ "is_state('{{ entity_id }}', 'on')" }}"
+            #   # "{% set entity_id = states('{{ entity_id }}') %}{{ true if entity_id == 'on' else false }}"
+            #   # > {{ is_state("'{{ entity_id }}'", 'on') }}
+            #   value_template: "{{ is_state('input_boolean.alexa_actionable_notification_test', 'on') }}"
+
+
+  # Alexa Actionable Notifications - ResponseYes: actions to do to affermative answer
+  alexa_actionable_notification_responseyes:
+    alias: "[Alexa] Actionable Notifications - ResponseYes"
+    description: "Alexa Actionable Notifications - ResponseYes"
+    fields:
+      entity_id:
+        description: entity ID of a switch used to control the cycle completes
+        example: input_boolean.alexa_actionable_notification_holder    # default
+      notify_system:
+        description: text notification system to use
+        example: notify.USER
+      title:
+        description: title of the message
+        example: "_ERROR_"
+      text_message:
+        description: text of the message
+        example: "Hai dimenticato di specificare un messaggio."
+      alexa_devices:
+        description: Alexa device(s) to use
+        example: >
+          "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+      volume_level:
+        description: volume level to set Alexa device(s)
+        example: 0.5                                                       # default
+      type:
+        description: type of message for Alexa device(s)
+        example: tts                                                       # default
+      method:
+        description: method of message for Alexa device(s)
+        example: all                                                       # default
+      voice_message:
+        description: text of the message that Alexa pronounce
+        example: "Hai dimenticato di specificare un messaggio."
+      delay:
+        description: time to wait until a new Alexa announce
+        example: 5                                                         # default
+    variables:
+      # default configuration
+      entity_id: input_boolean.alexa_actionable_notification_holder
+      notify_system: notify.USER
+      title: "_ERROR_"
+      text_message: "Hai dimenticato di specificare un messaggio."
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+      volume_level: 0.5
+      type: announce
+      method: all
+      voice_message: "{{ text_message }}"
+      delay: 5
+    sequence:
+      # text message advice - replace with your own Telegram or other platform notification system
+      - service: "{{ notify_system }}"
+        data_template:
+          title: "{{ title }}"
+          message: "{{ text_message }}"
+      # force update the last Alexa attribute used by the sensor
+      - service: alexa_media.update_last_called
+      # you may need to increase this value if you don't get the response on the Echo you asked the question
+      - delay: 00:00:01
+      # Alexa announce
+      - service: script.turn_on
+        entity_id: script.alexa_announce
+        data_template:
+          variables:
+            # replace with your favorite Alexa device(s) and settings
+            alexa_devices: "{{ alexa_devices }}"
+            volume_level: "{{ volume_level }}"
+            type: "{{ type }}"
+            method: "{{ method }}"
+            message: "{{ voice_message }}"
+            delay: "{{ delay }}"
+      # turn off the boolean to mark the cycle as completed
+      - service: input_boolean.turn_off
+        data:
+          entity_id: "{{ entity_id }}"
+
+
+  # Alexa announce
+
+  # general Alexa announce to a specific Echo(es) or all of them
+
+    # SAMPLES
+    #
+    #
+    # CASE 1 - default: all Echoes defined in "group.all_alexa_devices", 50% volume, "announce" type, "all" method, 5" delay; omit all variables except for the "message" value
+    #
+    # - service: script.turn_on
+    #   entity_id: script.alexa_announce
+    #   data_template:
+    #     variables:
+    #       message: "Questo dispositivo ha il volume impostato al {{ (state_attr('media_player.echo_flex_studio', 'volume_level')*100) | int }}%"
+    #
+    #
+    # CASE 2 - custom: one or more choosen Echo(es), 70% volume, "tts" type, "spoken" method only, 10" delay
+    #
+    # - service: script.turn_on
+    #   entity_id: script.alexa_announce
+    #   data_template:
+    #     variables:
+    #       alexa_devices: "media_player.echo_show_living_room"
+    #       volume_level: 0.75
+    #       type: tts
+    #       method: spoken
+    #       message: "Il volume di questo dispositivo è {{ (state_attr('{{ alexa_devices }}', 'volume_level')*10) | int }}"
+    #       delay: 10
+
+  # script to let talk Alexa on all (or specified) Alexa devices with many settings
+  alexa_announce:
+    alias: "[Alexa] impostazione volume e annuncio"
+    description: "annuncio a tutti i dispositivi con Alexa disponibili (default) oppure uno o più di quelli specificati"
+    mode: queued
+    variables:
+      # equals to "alexa_devices: group.all_alexa_devices"
+      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+      volume_level: 0.5
+      type: announce
+      method: all
+      delay: 5
+    sequence:
+      - service: media_player.volume_set
+        data_template:
+          entity_id: "{{ alexa_devices }}"
+          volume_level: "{{ volume_level }}"
+      - service: notify.alexa_media
+        data_template:
+          target: "{{ alexa_devices }}"
+          data:
+            type: "{{ type }}"
+            method: "{{ method }}"
+          message: "{{ message }}"
+      - delay: "{{ delay }}"
+
+  # script to verify announce on Alexa device(s) get done
+  alexa_announce_done:
+    alias: "[Alexa] announce done"
+    sequence:
+      - alias: repeat the sequence until the conditions are true
+        repeat:
+          sequence:
+            - service: script.turn_on
+              entity_id: script.alexa_announce
+              data_template:
+                variables:
+                  alexa_devices: "{{ alexa_devices }}"
+                  volume_level: "{{ volume_level }}"
+                  type: "{{ type }}"
+                  method: "{{ method }}"
+                  message: "{{ message }}"
+                  delay: "{{ delay }}"
+            - service: input_boolean.turn_off
+              entity_id: input_boolean.alexa_announce_done
+          until:
+            - condition: state
+              entity_id: "input_boolean.alexa_announce_done"
+              state: "off"
+      - delay: 5
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.alexa_announce_done
+
+
+
+# AUTOMATIONS
+
+automation:
+
+
+  # voice notification automations control
+
+  # disable Alexa voice notifications switch
+  - id: disable_Alexa_voice_notifications
+    alias: "[Alexa] disable voice notifications"
+    description: "disabilita le automazioni con notifica vocale"
+    initial_state: true
+    trigger:
+      - platform: state
+        entity_id: input_boolean.voice_notifications_switch
+    action:
+      - choose:
+        # CASE 1: switch on => enable automations
+        - conditions:
+            - condition: template
+              value_template: "{{ is_state('input_boolean.voice_notifications_switch', 'on') }}"
+          sequence:
+            - service: homeassistant.turn_on
+              entity_id: group.vocal_notification_automations
+        # CASE 2: switch off => disable automations
+        - conditions:
+            - condition: template
+              value_template: "{{ is_state('input_boolean.voice_notifications_switch', 'off') }}"
+          sequence:
+            - service: homeassistant.turn_off
+              entity_id: group.vocal_notification_automations
