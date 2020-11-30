@@ -163,6 +163,26 @@ script:
     alias: "[Alexa] impostazione volume e annuncio"
     description: "annuncio a tutti i dispositivi con Alexa disponibili (default) oppure uno o più di quelli specificati"
     mode: queued
+    fields:
+      alexa_devices:
+        description: Alexa device(s) to use
+        example: >
+          "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+      volume_level:
+        description: volume level to set Alexa device(s)
+        example: 0.5                                                       # default
+      type:
+        description: type of message for Alexa device(s)
+        example: tts                                                       # default
+      method:
+        description: method of message for Alexa device(s)
+        example: all                                                       # default
+      message:
+        description: text of the message that Alexa pronounce
+        example: "Hai dimenticato di specificare un messaggio."
+      delay:
+        description: time to wait until a new Alexa announce
+        example: 5                                                         # default
     variables:
       # equals to "alexa_devices: group.all_alexa_devices"
       alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
@@ -202,9 +222,6 @@ script:
       alexa_device:
         description: 'Alexa device you want to trigger'
         example: 'media_player.bedroom_echo'
-    variables:
-      # equals to "alexa_devices: group.all_alexa_devices"
-      alexa_device: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
     sequence:
       - service: input_text.set_value
         data:
