@@ -143,23 +143,21 @@ script:
     #
     # - service: script.turn_on
     #   entity_id: script.alexa_announce
-    #   data_template:
-    #     variables:
-    #       message: "Questo dispositivo ha il volume impostato al {{ (state_attr('media_player.echo_flex_studio', 'volume_level')*100) | int }}%"
+    #   data:
+    #     message: "Questo dispositivo ha il volume impostato al {{ (state_attr('media_player.echo_flex_studio', 'volume_level')*100) | int }}%"
     #
     #
     # CASE 2 - custom: one or more choosen Echo(es), 75% volume, "tts" type, "spoken" method only, 10" delay
     #
     # - service: script.turn_on
     #   entity_id: script.alexa_announce
-    #   data_template:
-    #     variables:
-    #       alexa_devices: "media_player.echo_flex_studio"
-    #       volume_level: 0.75
-    #       type: tts
-    #       method: spoken
-    #       message: "Il volume di questo dispositivo è {{ (state_attr('{{ alexa_devices }}', 'volume_level')*10) | int }}"
-    #       delay: 10
+    #   data:
+    #     alexa_devices: "media_player.echo_flex_studio"
+    #     volume_level: 0.75
+    #     type: tts
+    #     method: spoken
+    #     message: "Il volume di questo dispositivo è {{ (state_attr('{{ alexa_devices }}', 'volume_level')*10) | int }}"
+    #     delay: 10
 
   alexa_announce:
     alias: "[Alexa] impostazione volume e annuncio"
@@ -174,11 +172,11 @@ script:
       delay: 5
     sequence:
       - service: media_player.volume_set
-        data_template:
+        data:
           entity_id: "{{ alexa_devices }}"
           volume_level: "{{ volume_level }}"
       - service: notify.alexa_media
-        data_template:
+        data:
           target: "{{ alexa_devices }}"
           data:
             type: "{{ type }}"
@@ -206,7 +204,7 @@ script:
         example: 'media_player.bedroom_echo'
     variables:
       # equals to "alexa_devices: group.all_alexa_devices"
-      alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
+      alexa_device: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
     sequence:
       - service: input_text.set_value
         data:
@@ -235,12 +233,19 @@ script:
         description: "Alexa device(s) you want to trigger"
         example: >
           "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}" for all Alexa devices or "{{ states.sensor.last_alexa.state }}" for the last Alexa device invoked
+      volume_level:
+        description: volume level to set Alexa device(s)
+        example: 0.5                                                       # default
     variables:
       # equals to "alexa_devices: group.all_alexa_devices"
       alexa_devices: "{{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | join(', ') }}"
     sequence:
+      - service: media_player.volume_set
+        data:
+          entity_id: "{{ alexa_devices }}"
+          volume_level: "{{ volume_level }}"
       - service: script.activate_alexa_actionable_notification
-        data_template:
+        data:
           text: "{{ text }}"
           event_id: "{{ event_id }}"
           alexa_device: "{{ alexa_devices }}"
@@ -295,7 +300,7 @@ script:
           entity_id: "{{ entity_id }}"
       # text message advice - replace with your own Telegram or other platform notification system
       - service: "{{ notify_system }}"
-        data_template:
+        data:
           title: "{{ title }}"
           message: "{{ text_message }}"
       # run repeatedly a command that for some reason doesn't always work
@@ -305,13 +310,13 @@ script:
           while: "{{ is_state('input_boolean.alexa_actionable_notification_holder', 'on') }}"
           sequence:
             # Alexa Actionable Notifications Holder
-            - service: script.activate_alexa_actionable_notification
-              data_template:
+            - service: script.alexa_actionable_notification_holder
+              data:
                 text: "{{ voice_message }}"
                 event_id: "{{ event_id }}"
-                # replace with your favorite Alexa device(s)
                 alexa_devices: "{{ alexa_devices }}"
-            # give it some time to complete
+                volume_level: "{{ volume_level }}"
+            # give it some time to complete, asking again the question
             - delay: "{{ delay }}"
 
 
@@ -368,7 +373,7 @@ script:
     sequence:
       # text message advice - replace with your own Telegram or other platform notification system
       - service: "{{ notify_system }}"
-        data_template:
+        data:
           title: "{{ title }}"
           message: "{{ text_message }}"
       # force update the last Alexa attribute used by the sensor
@@ -376,17 +381,14 @@ script:
       # you may need to increase this value if you don't get the response on the Echo you asked the question
       - delay: 1
       # Alexa announce
-      - service: script.turn_on
-        entity_id: script.alexa_announce
-        data_template:
-          variables:
-            # replace with your favorite Alexa device(s) and settings
-            alexa_devices: "{{ alexa_devices }}"
-            volume_level: "{{ volume_level }}"
-            type: "{{ type }}"
-            method: "{{ method }}"
-            message: "{{ voice_message }}"
-            delay: "{{ delay }}"
+      - service: script.alexa_announce
+        data:
+          alexa_devices: "{{ alexa_devices }}"
+          volume_level: "{{ volume_level }}"
+          type: "{{ type }}"
+          method: "{{ method }}"
+          message: "{{ voice_message }}"
+          delay: "{{ delay }}"
       # turn off the boolean to mark the cycle as completed
       - service: input_boolean.turn_off
         data:
@@ -446,7 +448,7 @@ script:
     sequence:
       # # text message advice - replace with your own Telegram or other platform notification system
       # - service: "{{ notify_system }}"
-      #   data_template:
+      #   data:
       #     title: "{{ title }}"
       #     message: "{{ text_message }}"
       # force update the last Alexa attribute used by the sensor
@@ -456,15 +458,14 @@ script:
       # Alexa announce
       - service: script.turn_on
         entity_id: script.alexa_announce
-        data_template:
-          variables:
-            # replace with your favorite Alexa device(s) and settings
-            alexa_devices: "{{ alexa_devices }}"
-            volume_level: "{{ volume_level }}"
-            type: "{{ type }}"
-            method: "{{ method }}"
-            message: "{{ voice_message }}"
-            delay: "{{ delay }}"
+        data:
+          # replace with your favorite Alexa device(s) and settings
+          alexa_devices: "{{ alexa_devices }}"
+          volume_level: "{{ volume_level }}"
+          type: "{{ type }}"
+          method: "{{ method }}"
+          message: "{{ voice_message }}"
+          delay: "{{ delay }}"
 
 
   # Alexa Actionable Notifications - ResponseYes: actions to do to affermative answer
@@ -520,7 +521,7 @@ script:
     sequence:
       # text message advice - replace with your own Telegram or other platform notification system
       - service: "{{ notify_system }}"
-        data_template:
+        data:
           title: "{{ title }}"
           message: "{{ text_message }}"
       # force update the last Alexa attribute used by the sensor
@@ -530,15 +531,14 @@ script:
       # Alexa announce
       - service: script.turn_on
         entity_id: script.alexa_announce
-        data_template:
-          variables:
-            # replace with your favorite Alexa device(s) and settings
-            alexa_devices: "{{ alexa_devices }}"
-            volume_level: "{{ volume_level }}"
-            type: "{{ type }}"
-            method: "{{ method }}"
-            message: "{{ voice_message }}"
-            delay: "{{ delay }}"
+        data:
+          # replace with your favorite Alexa device(s) and settings
+          alexa_devices: "{{ alexa_devices }}"
+          volume_level: "{{ volume_level }}"
+          type: "{{ type }}"
+          method: "{{ method }}"
+          message: "{{ voice_message }}"
+          delay: "{{ delay }}"
 
 
 
