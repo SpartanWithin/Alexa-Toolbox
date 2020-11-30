@@ -45,9 +45,10 @@ automation:
     action:
     - service: script.alexa_actionable_notification_holder
       data:
+        alexa_devices: media_player.echo_flex_studio
+        volume_level: 0.5
         text: "Prova a dire un numero"
         event_id: alexa_actionable_notifications_number_test
-        alexa_devices: media_player.echo_flex_studio
 
   # Alexa Actionable Notifications number test - response
   - id: Alexa-Actionable_Notifications-number_test-response
@@ -79,8 +80,8 @@ automation:
         entity_id: light.desk
         to: "on"
         for: 1:00:00
-    # announce via test message and vocal message
     action:
+      # announce via test message and vocal message
       - service: script.alexa_actionable_notification_activation
         data:
           # replace with your favorite Alexa device(s) and settings
