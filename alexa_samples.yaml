@@ -46,7 +46,7 @@ automation:
     - service: script.alexa_actionable_notification_holder
       data:
         text: "Prova a dire un numero"
-        event_id: alexa_actionable_notifications_activation_number_test
+        event_id: alexa_actionable_notifications_number_test
         alexa_devices: media_player.echo_flex_studio
 
   # Alexa Actionable Notifications number test - response
@@ -58,7 +58,7 @@ automation:
     - platform: event
       event_type: alexa_actionable_notification
       event_data:
-        event_id: alexa_actionable_notifications_activation_number_test
+        event_id: alexa_actionable_notifications_number_test
         event_response_type: ResponseNumeric
     action:
     - service: notify.tiger
@@ -79,23 +79,22 @@ automation:
         entity_id: light.desk
         to: "on"
         for: 1:00:00
+    # announce via test message and vocal message
     action:
-      - service: script.turn_on
-        entity_id: script.alexa_actionable_notification_activation
-        data_template:
-          variables:
-            event_id: actionable_notifications_lights_left_on
-            # entity_id: input_boolean.alexa_actionable_notification_test
-            notify_system: notify.tiger
-            title: "_LUCI_"
-            text_message: >
-              Hai dimenticato la luce dello studio accesa.
-            alexa_devices: media_player.echo_flex_studio
-            # volume_level: 0.75
-            # type: announce
-            # method: all
-            voice_message: "La luce dello Studio è rimasta accesa. Vuoi spegnerla?"
-            delay: 60
+      - service: script.alexa_actionable_notification_activation
+        data:
+          # replace with your favorite Alexa device(s) and settings
+          event_id: actionable_notifications_lights_left_on
+          # entity_id: input_boolean.alexa_actionable_notification_test
+          notify_system: notify.tiger
+          title: "_LUCI_"
+          text_message: "Hai dimenticato la luce dello studio accesa."
+          alexa_devices: media_player.echo_flex_studio
+          volume_level: 0.75
+          # type: announce
+          # method: all
+          voice_message: "La luce dello Studio è rimasta accesa. Vuoi spegnerla?"
+          delay: 15
 
   # actionable notification for lights left on test ResponseYes
   - id: lights_on_test-response
@@ -109,19 +108,20 @@ automation:
           event_id: actionable_notifications_lights_left_on
           event_response_type: ResponseYes
     action:
-      - service: script.turn_on
-        entity_id: script.alexa_actionable_notification_responseyes
-        data_template:
-          variables:
-            # entity_id: input_boolean.alexa_actionable_notification_test
-            notify_system: notify.tiger
-            title: "_LUCI_"
-            text_message: "Hai dimenticato una luce accesa e l'ho spenta."
-            alexa_devices: media_player.echo_flex_studio
-            volume_level: 0.75
-            type: tts
-            # method: all
-            voice_message: "Ho spento la luce che avevi dimenticato accesa."
-            # delay: 5
+      # turn off the light as requested
       - service: light.turn_off
         entity_id: light.desk
+      # announce via test message and vocal message
+      - service: script.alexa_actionable_notification_responseyes
+        data:
+          # replace with your favorite Alexa device(s) and settings
+          # entity_id: input_boolean.alexa_actionable_notification_test
+          notify_system: notify.tiger
+          title: "_LUCI_"
+          text_message: "Hai dimenticato una luce accesa e l'ho spenta."
+          alexa_devices: media_player.echo_flex_studio
+          volume_level: 0.75
+          type: tts
+          # method: all
+          voice_message: "Ho spento la luce che avevi dimenticato accesa."
+          # delay: 5
