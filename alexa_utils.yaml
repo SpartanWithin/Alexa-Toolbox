@@ -329,10 +329,10 @@ script:
             # Alexa Actionable Notifications Holder
             - service: script.alexa_actionable_notification_holder
               data:
-                text: "{{ voice_message }}"
-                event_id: "{{ event_id }}"
                 alexa_devices: "{{ alexa_devices }}"
                 volume_level: "{{ volume_level }}"
+                text: "{{ voice_message }}"
+                event_id: "{{ event_id }}"
             # give it some time to complete, asking again the question
             - delay: "{{ delay }}"
 
